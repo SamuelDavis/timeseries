@@ -25,49 +25,52 @@ const iMAPE = 8;
 const sERROR = 'Y';
 const sACTUAL = 'A';
 const sFORECAST = 'F';
-const sNUM_FORECASTS = 'f';
+
+function formula(string $formula, string ...$placeholders): string {
+    return sprintf("\$\${$formula}\$\$", ...$placeholders);
+}
 
 $definitionSet = [
     'Forecast Calculation' => [
         [
             'Naive Forecasting',
             'next forecast = current actual',
-            sprintf('%s<sub>t+1</sub> = %s<sub>t</sub>', sFORECAST, sACTUAL),
+            formula('%s_{t+1} = %s_{t}', sFORECAST, sACTUAL),
         ],
         [
             'Average of Past Values',
-            'next forecast = avg of current and previous actual',
-            sprintf('%s<sub>t+1</sub> = &Sigma;%s<sub>t</sub> &div; t', sFORECAST, sACTUAL),
+            'next forecast = avg of past n-many actuals',
+            formula('%s_{t+1} = \frac{\sum_{t-n}^t %s_{t}}{n}', sFORECAST, sACTUAL),
         ],
     ],
     'Error Calculation' => [
         [
             'Forecast Error',
             'error = actual - forecast',
-            sprintf('%s<sub>t</sub> = %s<sub>t</sub> - %s<sub>t</sub>', sERROR, sACTUAL, sFORECAST),
+            formula('%s_{t} = %s_{t} - %s_{t}', sERROR, sACTUAL, sFORECAST),
         ],
         [
 
             'Mean Absolute Error (MAE)',
             'sum of abs values of forecast errors divided by # of forecasts',
-            sprintf('&lpar;&Sigma;<sub>t</sub>|%s<sub>t</sub>|&rpar; &div; %s', sERROR, sNUM_FORECASTS),
+            formula('\frac{\sum_{t-n}^t |%s_{t}|}{n}', sERROR),
         ],
         [
 
             'Mean Square Error (MSE)',
-            'sum of the errors subtract the forecast squared divided by # of forecasts',
-            sprintf('&lpar;&Sigma;<sub>t</sub>%s<sub>t</sub><sup>2</sup>&rpar; &div; %s', sERROR, sNUM_FORECASTS),
+            'sum of the errors squared divided by # of forecasts',
+            formula('\frac{\sum_{t-n}^t %s_{t}^2}{n}', sERROR),
         ],
         [
 
             'Percentage Error (PCTE)',
             'error divided by actual',
-            sprintf('%s<sub>t</sub> &div; %s<sub>t</sub>', sERROR, sACTUAL),
+            formula('\frac{%s_{t}}{%s_{t}}', sERROR, sACTUAL),
         ],
         [
             'Absolute Percentage Error (APCTE)',
             'absolute value of error divided by actual',
-            sprintf('|%s<sub>t</sub> &div; %s<sub>t</sub>|', sERROR, sACTUAL),
+            formula('\frac{|%s_{t}|}{%s_{t}}', sERROR, sACTUAL),
         ],
     ],
 ];
@@ -177,7 +180,7 @@ function deriveError(array $labels, array $timeSeries): array
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
     <script type="text/javascript"
             src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
     <title>TimeSeries</title>
@@ -203,7 +206,7 @@ function deriveError(array $labels, array $timeSeries): array
                             <li class="list-group-item">
                                 <h3><?= $name ?></h3>
                                 <label><?= $description ?></label>
-                                <pre><?= $equation ?></pre>
+                                <p><?= $equation ?></p>
                             </li>
                         <?php endforeach; ?>
                     </ul>
