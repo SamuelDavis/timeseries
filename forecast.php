@@ -1,6 +1,76 @@
 <?php
 
-return function (string $title, array $labels, array $rows): string {
+function deriveError(array $labels, array $timeSeries): array
+{
+    // Add Forecast Error
+    $labels[] = 'Forecast Error';
+    foreach ($timeSeries as $i => &$row) {
+        $row[iERROR] = $row[iFORECAST] == null
+            ? null
+            : $row[iACTUAL] - $row[iFORECAST];
+    }
+
+    // Add Mean Average Error
+    $labels[] = 'MAE';
+    $mae = [];
+    foreach ($timeSeries as $i => &$row) {
+        if ($row[iERROR] === null) {
+            $row[iMAE] = null;
+        } else {
+            $mae[] = abs($row[iERROR]);
+            $row[iMAE] = round(array_sum($mae) / max(1, count($mae)), 2);
+        }
+    }
+
+    // Add Mean Square Error
+    $labels[] = 'MSE';
+    $mse = [];
+    foreach ($timeSeries as $i => &$row) {
+        if ($row[iERROR] === null) {
+            $row[iMSE] = null;
+        } else {
+            $mse[] = pow($row[iERROR], 2);
+            $row[iMSE] = round(array_sum($mse) / max(1, count($mse)), 2);
+        }
+    }
+
+    // Add Percent Error
+    $labels[] = 'PCTE';
+    foreach ($timeSeries as $i => &$row) {
+        if ($row[iERROR] === null) {
+            $row[iPCTE] = null;
+        } else {
+            $row[iPCTE] = round($row[iERROR] / $row[iACTUAL] * 100, 2);
+        }
+    }
+
+    // Add Absolute Percent Error
+    $labels[] = 'APCTE';
+    foreach ($timeSeries as $i => &$row) {
+        if ($row[iPCTE] === null) {
+            $row[iAPCTE] = null;
+        } else {
+            $row[iAPCTE] = abs($row[iPCTE]);
+        }
+    }
+
+    // Add Mean Absolute Percent Error (MAPE)
+    $labels[] = 'MAPE';
+    $mape = [];
+    foreach ($timeSeries as $i => &$row) {
+        if ($row[iAPCTE] === null) {
+            $row[iMAPE] = null;
+        } else {
+            $mape[] = $row[iAPCTE];
+            $row[iMAPE] = array_sum($mape) / max(1, count($mape));
+        }
+    }
+
+    return [$labels, $timeSeries];
+}
+
+function renderData(string $title, array $labels, array $rows): string
+{
     $chartId = uniqid();
     $colors = [
         'pink',
@@ -62,4 +132,4 @@ return function (string $title, array $labels, array $rows): string {
     </script>
     <?php
     return ob_get_clean();
-};
+}
